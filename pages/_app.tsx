@@ -5,8 +5,8 @@ import { Provider } from "mobx-react";
 import initializeStore from "../stores/stores";
 
 class CustomApp extends App {
-  static async getInitialProps(appContext) {
-    const mobxStore = initializeStore();
+  static async getInitialProps(appContext: any) {
+    const mobxStore: any = initializeStore();
     appContext.ctx.mobxStore = mobxStore;
     const appProps = await App.getInitialProps(appContext);
     return {
@@ -15,12 +15,14 @@ class CustomApp extends App {
     };
   }
 
-  constructor(props) {
+  mobxStore: any = null
+
+  constructor(props: any) {
     super(props);
     const isServer = typeof window === "undefined";
     this.mobxStore = isServer
       ? props.initialMobxState
-      : initializeStore(props.initialMobxState);
+      : initializeStore();
   }
 
   render() {

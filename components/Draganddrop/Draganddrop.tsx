@@ -1,44 +1,76 @@
-import React, { Component } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { inject, observer } from "mobx-react";
+import React, { Component } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { inject, observer } from 'mobx-react';
 
-const reorder = (list, startIndex, endIndex) => {
+interface IDroppable {
+  droppableId: string;
+  index: number;
+}
+
+interface IColumn {
+  id: string;
+  title: string;
+}
+
+interface ITask {
+  id: string;
+  content: string;
+}
+
+interface ITaskList {
+  id: string;
+  columnId: string;
+  task: ITask[];
+}
+
+interface IProps {
+  columns?: IColumn[];
+  tasksList?: ITaskList[];
+  changeCurrentTask?(source: ITask[], id: string): void;
+  createNewTask?(id: string): void;
+  deleteTaskAtColumn?(columnId: string): void;
+  deleteColumn?(columnId: string): void;
+  deleteTask?(id: string): void;
+  setLocaleStorageToStoreColumn?(dataColumns: string): void;
+  setLocalStorageToStoreTask?(dataTasks: string): void;
+}
+
+const reorder = (list: string, startIndex: number, endIndex: number) => {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
 };
 
-const move = (source, destination, droppableSource, droppableDestination) => {
+const move = (
+  source: string,
+  destination: string,
+  droppableSource: IDroppable,
+  droppableDestination: IDroppable
+) => {
   const sourceClone = Array.from(source);
   const destClone = Array.from(destination);
   const [removed] = sourceClone.splice(droppableSource.index, 1);
 
   destClone.splice(droppableDestination.index, 0, removed);
 
-  const result = {};
+  const result: any = {};
   result[droppableSource.droppableId] = sourceClone;
   result[droppableDestination.droppableId] = destClone;
-
   return result;
 };
 
 @inject(
   ({
-    columnStore: {
-      columns,
-      addColumn,
-      deleteColumn,
-      setLocaleStorageToStoreColumn
-    },
+    columnStore: { columns, addColumn, deleteColumn, setLocaleStorageToStoreColumn },
     taskStore: {
       tasksList,
       deleteTask,
       changeCurrentTask,
       createNewTask,
       deleteTaskAtColumn,
-      setLocalStorageToStoreTask
-    }
+      setLocalStorageToStoreTask,
+    },
   }) => ({
     columns,
     addColumn,
@@ -49,26 +81,26 @@ const move = (source, destination, droppableSource, droppableDestination) => {
     deleteTaskAtColumn,
     deleteTask,
     setLocaleStorageToStoreColumn,
-    setLocalStorageToStoreTask
+    setLocalStorageToStoreTask,
   })
 )
 @observer
-class Draganddrop extends Component {
-  onDragEnd = this.onDragEnd.bind(this);
-  getList = this.getList.bind(this);
-  deleteColumnAndTask = this.deleteColumnAndTask.bind(this);
+class Draganddrop extends Component<IProps> {
+  constructor(props: IProps) {
+    super(props);
+    this.onDragEnd = this.onDragEnd.bind(this);
+    this.getList = this.getList.bind(this);
+    this.deleteColumnAndTask = this.deleteColumnAndTask.bind(this);
+  }
 
   componentDidMount() {
-    const {
-      setLocaleStorageToStoreColumn,
-      setLocalStorageToStoreTask
-    } = this.props;
-    const dataColumns = localStorage.getItem("columns");
-    const dataTasks = localStorage.getItem("tasks");
+    const { setLocaleStorageToStoreColumn, setLocalStorageToStoreTask } = this.props;
+    const dataColumns = localStorage.getItem('columns');
+    const dataTasks = localStorage.getItem('tasks');
     if (dataColumns) {
-      setLocaleStorageToStoreColumn(dataColumns);
+      setLocaleStorageToStoreColumn!(dataColumns);
       if (dataTasks) {
-        setLocalStorageToStoreTask(dataTasks);
+        setLocalStorageToStoreTask!(dataTasks);
       }
       return;
     }
@@ -76,15 +108,17 @@ class Draganddrop extends Component {
 
   componentDidUpdate() {
     const { columns, tasksList } = this.props;
-    localStorage.setItem("columns", JSON.stringify(columns));
-    localStorage.setItem("tasks", JSON.stringify(tasksList));
+    localStorage.setItem('columns', JSON.stringify(columns));
+    localStorage.setItem('tasks', JSON.stringify(tasksList));
   }
 
-  getList(id) {
-    return this.props.tasksList.find(itemId => itemId.columnId === id).task;
+  getList(id: string): any {
+    const { tasksList } = this.props;
+    const find = tasksList!.find((itemId: ITaskList) => itemId.columnId === id);
+    return find!.task;
   }
 
-  onDragEnd(result) {
+  onDragEnd(result: any) {
     const { source, destination } = result;
     const { changeCurrentTask, createNewTask, tasksList } = this.props;
 
@@ -92,25 +126,18 @@ class Draganddrop extends Component {
       return;
     }
 
-    const checkDestinationCopy = tasksList
-      .map(checkedItem => checkedItem.columnId)
+    const checkDestinationCopy = tasksList!
+      .map((checkedItem: any) => checkedItem.columnId)
       .includes(destination.droppableId);
 
-    if (
-      source.droppableId !== destination.droppableId &&
-      !checkDestinationCopy
-    ) {
-      createNewTask(destination.droppableId);
+    if (source.droppableId !== destination.droppableId && !checkDestinationCopy) {
+      createNewTask!(destination.droppableId);
     }
 
     if (source.droppableId === destination.droppableId) {
-      const items = reorder(
-        this.getList(source.droppableId),
-        source.index,
-        destination.index
-      );
+      const items: any = reorder(this.getList(source.droppableId), source.index, destination.index);
 
-      changeCurrentTask(items, source.droppableId);
+      changeCurrentTask!(items, source.droppableId);
     } else {
       const result = move(
         this.getList(source.droppableId),
@@ -119,25 +146,22 @@ class Draganddrop extends Component {
         destination
       );
 
-      changeCurrentTask(
-        result[destination.droppableId],
-        destination.droppableId
-      );
-      changeCurrentTask(result[source.droppableId], source.droppableId);
+      changeCurrentTask!(result[destination.droppableId], destination.droppableId);
+      changeCurrentTask!(result[source.droppableId], source.droppableId);
     }
   }
 
-  deleteColumnAndTask(columnId) {
+  deleteColumnAndTask(columnId: string) {
     const { deleteTaskAtColumn, deleteColumn } = this.props;
-    deleteTaskAtColumn(columnId);
-    deleteColumn(columnId);
+    deleteTaskAtColumn!(columnId);
+    deleteColumn!(columnId);
   }
 
   render() {
     const { columns = [], tasksList = [], deleteTask } = this.props;
     return (
       <DragDropContext onDragEnd={this.onDragEnd}>
-        {columns.map((column, index) => {
+        {columns.map((column: IColumn, index: number) => {
           return (
             <Droppable key={`droppable-${index}`} droppableId={column.id}>
               {provided => {
@@ -145,33 +169,25 @@ class Draganddrop extends Component {
                   <>
                     <div className="column">
                       <div className="column__title">
-                        {column.title}{" "}
+                        {column.title}{' '}
                         <button
                           className="column__title-deleted"
                           type="button"
-                          onClick={this.deleteColumnAndTask.bind(
-                            null,
-                            column.id
-                          )}
+                          onClick={this.deleteColumnAndTask.bind(null, column.id)}
                         >
                           <i className="far fa-trash-alt"></i>
                         </button>
                       </div>
                       <div ref={provided.innerRef} className="column__section">
                         {tasksList.find(
-                          currentColumn => currentColumn.columnId === column.id
+                          (currentColumn: ITaskList) => currentColumn.columnId === column.id
                         ) &&
                           tasksList
                             .find(
-                              currentColumn =>
-                                currentColumn.columnId === column.id
-                            )
-                            .task.map((item, index2) => (
-                              <Draggable
-                                key={item.id}
-                                draggableId={item.id}
-                                index={index2}
-                              >
+                              (currentColumn: ITaskList) => currentColumn.columnId === column.id
+                            )!
+                            .task.map((item: ITask, index2: number) => (
+                              <Draggable key={item.id} draggableId={item.id} index={index2}>
                                 {provided => (
                                   <div
                                     ref={provided.innerRef}
@@ -182,12 +198,8 @@ class Draganddrop extends Component {
                                     {item.content}
                                     <button
                                       type="button"
-                                      className='task__deleted'
-                                      onClick={deleteTask.bind(
-                                        null,
-                                        column.id,
-                                        item.id
-                                      )}
+                                      className="task__deleted"
+                                      onClick={deleteTask!.bind(null, column.id, item.id)}
                                     >
                                       <i className="fas fa-minus-circle"></i>
                                     </button>
@@ -235,6 +247,7 @@ class Draganddrop extends Component {
             border-radius: 5px;
             background-color: white;
             padding: 10px;
+            word-break: break-all;
             min-height: 50px;
             margin-bottom: 10px;
             display: flex;

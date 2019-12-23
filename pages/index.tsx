@@ -1,7 +1,7 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
 import '@fortawesome/fontawesome-free/js/all';
 
-import Main from "../components/Main/Main";
+import Main from '../components/Main/Main';
 
 class Index extends Component {
   render() {

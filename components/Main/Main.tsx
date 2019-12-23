@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import Header from "../Header/Header";
 import Draganddrop from "../Draganddrop/Draganddrop";
 
-class Main extends Component {
+class Main extends Component<any> {
   render() {
     return (
       <>

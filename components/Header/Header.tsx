@@ -1,97 +1,128 @@
-import React, { Component } from "react";
-import { inject, observer } from "mobx-react";
+import * as React from 'react';
+import { inject, observer } from 'mobx-react';
+
+interface IColumn {
+  id: string;
+  title: string;
+}
+
+interface ITask {
+  id: string;
+  content: string;
+}
+
+interface ITaskList {
+  id: string;
+  columnId: string;
+  task: ITask[];
+}
+
+interface IProps {
+  columns?: IColumn[];
+  tasksList?: ITaskList[];
+  onChange?(): void;
+  clearColumnsList?(): void;
+  clearTasksList?(): void;
+  addColumn?(columnName: string): void;
+  addTaskList?(taskName: string, id: string): void;
+}
 
 @inject(
   ({
     columnStore: { addColumn, clearColumnsList, columns },
-    taskStore: { addTaskList, tasksList, clearTasksList }
+    taskStore: { addTaskList, tasksList, clearTasksList },
   }) => ({
     addColumn,
     columns,
     clearColumnsList,
     addTaskList,
     tasksList,
-    clearTasksList
+    clearTasksList,
   })
 )
 @observer
-class Header extends Component {
+class Header extends React.Component<IProps> {
   state = {
     isAddColumn: false,
     isAddTask: false,
-    columnName: "",
-    taskName: ""
+    columnName: '',
+    taskName: '',
   };
 
-  onChange = this.onChange.bind(this);
-  newColumn = this.newColumn.bind(this);
-  addTask = this.addTask.bind(this);
-  clearColumnsTasksList = this.clearColumnsTasksList.bind(this);
-  closeInput = this.closeInput.bind(this);
+  constructor(props: IProps) {
+    super(props);
+    this.onChange = this.onChange.bind(this);
+    this.newColumn = this.newColumn.bind(this);
+    this.addTask = this.addTask.bind(this);
+    this.clearColumnsTasksList = this.clearColumnsTasksList.bind(this);
+    this.closeInput = this.closeInput.bind(this);
+  }
 
-  onChange({ target: { name, value } }) {
+  onChange({ currentTarget: { name, value } }: React.FormEvent<HTMLInputElement>): void {
     this.setState({
-      [name]: value
+      [name]: value,
     });
   }
 
   clearColumnsTasksList() {
     const { clearColumnsList, clearTasksList } = this.props;
-    clearColumnsList();
-    clearTasksList();
+    clearColumnsList!();
+    clearTasksList!();
   }
 
-  newColumn(e) {
+  newColumn(e: React.FormEvent<HTMLFormElement>): void {
     const { isAddColumn, columnName } = this.state;
     const { addColumn } = this.props;
 
     e.preventDefault();
 
-    if (isAddColumn && columnName.length !== 0) {
-      addColumn(columnName);
+    if (!isAddColumn && columnName.length !== 0) {
+      addColumn!(columnName);
       this.setState({
         isAddColumn: false,
-        columnName: ""
+        columnName: '',
       });
       return;
     }
+
     this.setState({
       isAddColumn: true,
-      isAddTask: false
+      isAddTask: false,
     });
   }
 
-  addTask(e) {
+  addTask(e: React.FormEvent<HTMLFormElement>) {
     const { isAddTask, taskName } = this.state;
     const { addTaskList, columns } = this.props;
 
     e.preventDefault();
 
-    if (isAddTask && taskName.length !== 0) {
-      addTaskList(taskName, columns[0].id);
+    if (!isAddTask && taskName.length !== 0) {
+      const column = columns && columns[0];
+      addTaskList!(taskName, column!.id);
       this.setState({
         isAddTask: false,
-        taskName: ""
+        taskName: '',
       });
       return;
-    } else if (columns.length > 0) {
+    } else if (columns!.length > 0) {
       this.setState({
         isAddTask: true,
-        isAddColumn: false
+        isAddColumn: false,
       });
     } else {
-      alert("Please first create new column");
+      alert('Please first create new column');
     }
   }
 
-  closeInput({ target: { classList} }) {
+  closeInput({ currentTarget: { classList } }: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     const { isAddColumn, isAddTask } = this.state;
     const isHeader = classList.contains('header');
-    if(isHeader) {
+    if (isHeader) {
       if (isAddColumn || isAddTask) {
         this.setState({
           isAddColumn: false,
-          isAddTask: false
+          isAddTask: false,
         });
       }
     }
